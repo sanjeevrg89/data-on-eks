@@ -1,0 +1,64 @@
+# ChromaDB Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: chromadb
+---
+# ChromaDB Persistent Volume Claim (PVC)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: chromadb-pvc
+  namespace: chromadb
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: default
+---
+# ChromaDB Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chromadb
+  namespace: chromadb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chromadb
+  template:
+    metadata:
+      labels:
+        app: chromadb
+    spec:
+      containers:
+      - name: chromadb
+        image: your-docker-repo/chromadb-custom:latest
+        ports:
+        - containerPort: 8000
+        volumeMounts:
+        - mountPath: /mnt/data/ChromaDb
+          name: chromadb-storage
+      volumes:
+      - name: chromadb-storage
+        persistentVolumeClaim:
+          claimName: chromadb-pvc
+
+---
+# ChromaDB Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: chromadb-service
+  namespace: chromadb
+spec:
+  selector:
+    app: chromadb
+  ports:
+  - protocol: TCP
+    port: 8000
+    targetPort: 8000
+  type: ClusterIP
